@@ -1,0 +1,11 @@
+# .gitignore for Elm projects
+
+# Elm build artifacts
+elm-stuff/
+/build/
+
+# Generated JavaScript file (if separate)
+main.js
+
+# Node.js dependencies (if using Elm with JavaScript tooling)
+node_modules/
