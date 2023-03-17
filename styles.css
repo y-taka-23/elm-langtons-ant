@@ -1,3 +1,17 @@
-body {
-    /* color: blue; */
+.row {
+  display: flex;
+}
+
+.cell {
+  width: 3px;
+  height: 3px;
+  border: 1px solid #ccc;
+}
+
+.cell-white {
+    background-color: #ffffff;
+}
+
+.cell-black {
+    background-color: black;
 }

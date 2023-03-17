@@ -1,27 +1,38 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, h1, text)
-import Html.Attributes exposing (disabled)
+import Html exposing (Html, div, button, text, h1)
+import Html.Attributes exposing (class, disabled)
 import Time exposing (every)
 import Html.Events exposing (onClick)
 
 
 -- MODEL
 
+type Cell
+    = White
+    | Black
+
 type alias Model =
     { count : Int
     , state : State
+    , cells : List (List Cell)
     }
 
 type State
     = Running
     | Paused
 
+
+initCells : Int -> Int -> List (List Cell)
+initCells rows cols =
+    List.repeat rows (List.repeat cols White)
+
 init : Model
 init =
     { count = 0
-    , state = Running
+    , state = Paused
+    , cells = initCells 100 100
     }
 
 
@@ -55,6 +66,25 @@ update msg model =
 
 -- VIEW
 
+viewCell : Cell -> Html Msg
+viewCell cell =
+    let
+        cellClass =
+            case cell of
+                White ->
+                    "cell-white"
+
+                Black ->
+                    "cell-black"
+    in
+    div [ class ("cell " ++ cellClass) ] []
+
+viewGrid : List (List Cell) -> Html Msg
+viewGrid grid =
+    div []
+        (List.map (\row -> div [ class "row" ] (List.map viewCell row)) grid)
+
+
 view : Model -> Html Msg
 view model =
     div []
@@ -62,6 +92,7 @@ view model =
         , button [ onClick Pause, disabled (model.state /= Running) ] [ text "Pause" ]
         , button [ onClick Resume, disabled (model.state == Running) ] [ text "Resume" ]
         , button [ onClick Reset, disabled (model.state == Running) ] [ text "Reset" ]
+        , viewGrid model.cells
         ]
 
 
