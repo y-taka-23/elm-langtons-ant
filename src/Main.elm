@@ -1,49 +1,87 @@
-module Main exposing (main)
+module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, text)
+import Html exposing (Html, button, div, h1, text)
+import Html.Attributes exposing (disabled)
+import Time exposing (every)
 import Html.Events exposing (onClick)
 
 
--- Model
+-- MODEL
 
 type alias Model =
-    { steps : Int }
+    { count : Int
+    , state : State
+    }
+
+type State
+    = Running
+    | Paused
+
+init : Model
+init =
+    { count = 0
+    , state = Running
+    }
 
 
--- Initial model
-
-initialModel : Model
-initialModel =
-    { steps = 0 }
-
-
--- Msg
+-- UPDATE
 
 type Msg
-    = Increment
+    = Tick
+    | Pause
+    | Resume
+    | Reset
 
 
--- Update
-
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Increment ->
-            { model | steps = model.steps + 1 }
+        Tick ->
+            if model.state == Running then
+                ( { model | count = model.count + 1 }, Cmd.none )
+            else
+                ( model, Cmd.none )
+
+        Pause ->
+            ( { model | state = Paused }, Cmd.none )
+
+        Resume ->
+            ( { model | state = Running }, Cmd.none )
+
+        Reset ->
+            ( { model | count = 0 }, Cmd.none )
 
 
--- View
+-- VIEW
 
 view : Model -> Html Msg
 view model =
     div []
-        [ div [] [ text ("Steps: " ++ String.fromInt model.steps) ]
-        , button [ onClick Increment ] [ text "Click me!" ]
+        [ h1 [] [ text ("Steps: " ++ String.fromInt model.count) ]
+        , button [ onClick Pause, disabled (model.state /= Running) ] [ text "Pause" ]
+        , button [ onClick Resume, disabled (model.state == Running) ] [ text "Resume" ]
+        , button [ onClick Reset, disabled (model.state == Running) ] [ text "Reset" ]
         ]
 
 
--- Main
+-- SUBSCRIPTIONS
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    if model.state == Running then
+        Time.every 100 (\_ -> Tick)
+    else
+        Sub.none
+
+
+-- MAIN
+
+main : Program () Model Msg
 main =
-    Browser.sandbox { init = initialModel, update = update, view = view }
+    Browser.element
+        { init = \_ -> ( init, Cmd.none )
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
