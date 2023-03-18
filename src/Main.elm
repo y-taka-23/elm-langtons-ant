@@ -82,7 +82,7 @@ update msg model =
             ( { model | state = Running }, Cmd.none )
 
         Reset ->
-            ( { model | count = 0 }, Cmd.none )
+            (init, Cmd.none)
 
 
 moveAnt : Model -> ( Position, Direction, List (List Cell) )
