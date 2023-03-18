@@ -215,7 +215,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.state of
         Running ->
-            Time.every 100 (\_ -> Tick)
+            Time.every 10 (\_ -> Tick)
 
         Stopped ->
             Sub.none
