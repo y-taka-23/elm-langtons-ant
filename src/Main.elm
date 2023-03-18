@@ -1,38 +1,49 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, div, button, text, h1)
-import Html.Attributes exposing (class, disabled)
-import Time exposing (every)
+import Html exposing (Html, button, div, h1, text)
 import Html.Events exposing (onClick)
+import Html.Attributes exposing (class, disabled)
+import Task
+import Time
+import List.Extra
 
 
--- MODEL
+type alias Model =
+    { cells : List (List Cell)
+    , count : Int
+    , state : State
+    , antPosition : Position
+    , antDirection : Direction
+    }
+
+type State
+    = Stopped
+    | Running
 
 type Cell
     = White
     | Black
 
-type alias Model =
-    { count : Int
-    , state : State
-    , cells : List (List Cell)
+type alias Position =
+    { x : Int
+    , y : Int
     }
 
-type State
-    = Running
-    | Paused
+type Direction
+    = Up
+    | Right
+    | Down
+    | Left
 
-
-initCells : Int -> Int -> List (List Cell)
-initCells rows cols =
-    List.repeat rows (List.repeat cols White)
 
 init : Model
 init =
     { count = 0
-    , state = Paused
-    , cells = initCells 100 100
+    , state = Stopped
+    , cells = List.repeat 100 (List.repeat 100 White)
+    , antPosition = Position 50 50
+    , antDirection = Up
     }
 
 
@@ -50,18 +61,120 @@ update msg model =
     case msg of
         Tick ->
             if model.state == Running then
-                ( { model | count = model.count + 1 }, Cmd.none )
+                let
+                    (newAntPosition, newAntDirection, newCells) = moveAnt model
+                in
+                ( { model
+                    | count = model.count + 1
+                    , antPosition = newAntPosition
+                    , antDirection = newAntDirection
+                    , cells = newCells
+                  }
+                , Cmd.none
+                )
             else
                 ( model, Cmd.none )
 
         Pause ->
-            ( { model | state = Paused }, Cmd.none )
+            ( { model | state = Stopped }, Cmd.none )
 
         Resume ->
             ( { model | state = Running }, Cmd.none )
 
         Reset ->
             ( { model | count = 0 }, Cmd.none )
+
+
+moveAnt : Model -> ( Position, Direction, List (List Cell) )
+moveAnt model =
+    let
+        pos = model.antPosition
+        currentCell = getCell pos.x pos.y model.cells
+        newDirection = changeDirection model.antDirection currentCell
+        newCells = flipCellColor model.antPosition model.cells
+        newPosition = moveForward model.antPosition newDirection
+    in
+    ( newPosition, newDirection, newCells )
+
+
+getCell : Int -> Int -> List (List Cell) -> Cell
+getCell x y cells =
+    List.Extra.getAt y cells
+        |> Maybe.andThen (List.Extra.getAt x)
+        |> Maybe.withDefault White
+
+
+changeDirection : Direction -> Cell -> Direction
+changeDirection direction cell =
+    case cell of
+        White ->
+            turnRight direction
+
+        Black ->
+            turnLeft direction
+
+
+turnRight : Direction -> Direction
+turnRight direction =
+    case direction of
+        Up ->
+            Right
+
+        Right ->
+            Down
+
+        Down ->
+            Left
+
+        Left ->
+            Up
+
+
+turnLeft : Direction -> Direction
+turnLeft direction =
+    case direction of
+        Up ->
+            Left
+
+        Right ->
+            Up
+
+        Down ->
+            Right
+
+        Left ->
+            Down
+
+
+flipCellColor : Position -> List (List Cell) -> List (List Cell)
+flipCellColor position cells =
+    let
+        x = position.x
+        y = position.y
+        currentCell = getCell x y cells
+    in
+    case currentCell of
+        Black ->
+            List.Extra.setAt y (List.Extra.setAt x White (Maybe.withDefault [] (List.Extra.getAt y cells))) cells
+
+        White ->
+            List.Extra.setAt y (List.Extra.setAt x Black (Maybe.withDefault [] (List.Extra.getAt y cells))) cells
+
+
+moveForward : Position -> Direction -> Position
+moveForward position direction =
+    case direction of
+        Up ->
+            { position | y = position.y - 1 }
+
+        Right ->
+            { position | x = position.x + 1 }
+
+        Down ->
+            { position | y = position.y + 1 }
+
+        Left ->
+            { position | x = position.x - 1 }
 
 
 -- VIEW
@@ -100,10 +213,12 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if model.state == Running then
-        Time.every 100 (\_ -> Tick)
-    else
-        Sub.none
+    case model.state of
+        Running ->
+            Time.every 100 (\_ -> Tick)
+
+        Stopped ->
+            Sub.none
 
 
 -- MAIN
