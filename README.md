@@ -11,7 +11,7 @@ of Langton's Ant in Elm, allowing users to observe and explore the dynamic
 patterns formed by the ant as it traverses the grid according to a set of basic 
 rules.
 
-![Langton's Ant Screenshot](./langtonsant.gif)
+<img src="./langtonsant.gif" alt="Langton's Ant Screenshot" width="400" />
 
 ## Usage
 
